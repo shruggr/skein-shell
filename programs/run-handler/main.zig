@@ -3,7 +3,9 @@
 //! Step 1 (input: the admitted message and its body record): decode the body
 //! {cmd, tree?, cwd?, env?} (no tree: the `main` head's, else the empty tree),
 //! put the shell's arguments {cmd, tree, cwd?, env?} as a record and launch
-//! the shell with it. The step ends; the thread waits on the shell.
+//! the shell with it — this app's `shell` program, read from the app record
+//! at the head `shell/app` (shruggr/skein#83: the shell is this app's, not
+//! the kernel's). The step ends; the thread waits on the shell.
 //!
 //! Step 2 (input: the shell at rest): send the result to the sender in box
 //! `results` (an emit, #70: delivered by its transport): {exitCode, stdout, stderr, tree,
@@ -28,11 +30,11 @@ fn step(a: Allocator) !void {
     const in = try sk.input(a);
     const args: Value = in.get("args") orelse .null;
     const resolved = sk.listField(in, "resolved") catch |e| return sk.wrap(a, "input", e);
-    if (resolved.len == 0) return first(a, in, args);
+    if (resolved.len == 0) return first(a, args);
     return second(a, args, resolved[0]);
 }
 
-fn first(a: Allocator, in: Value, args: Value) !void {
+fn first(a: Allocator, args: Value) !void {
     const b = try sk.readBody(a, try sk.linkField(args, "message"), try sk.linkField(args, "body"));
     const cmd = sk.textField(b, "cmd") catch |e| return sk.wrap(a, "body", e);
     var tree = sk.linkField(b, "tree") catch |e| return sk.wrap(a, "body", e);
@@ -59,8 +61,21 @@ fn first(a: Allocator, in: Value, args: Value) !void {
     if (cwd.len > 0) try sa.put("cwd", cbor.string(cwd));
     try sa.put("env", env);
     const rc = sk.put(a, sa.value()) catch |e| return sk.wrap(a, "put shell args", e);
-    const shell = sk.program(in, "shell") orelse return sk.report("no shell program");
+    const shell = try shellProgram(a);
     _ = sk.launch(a, shell, rc) catch |e| return sk.wrap(a, "launch", e);
+}
+
+/// The app's name (its heads are `shell/…`; its root head `shell/app`).
+const APP = "shell";
+
+/// The shell program record: the app record's `programs.shell` (the install
+/// wrote it from the manifest's `shell` program, its modules this tree's).
+fn shellProgram(a: Allocator) ![]const u8 {
+    const root = (try sk.head(a, APP ++ "/app")) orelse return sk.report("no head shell/app: the shell app is not installed");
+    const m = try sk.get(a, root);
+    if (!eql(u8, Value.str(m.get("kind")) orelse "", "app")) return sk.report("head shell/app: its root is not an app record");
+    const ps = m.get("programs") orelse return sk.report("shell/app: no programs");
+    return Value.cidOf(ps.get("shell")) orelse return sk.report("shell/app: no shell program");
 }
 
 /// A byte-string field as the Go handler read it: bytes, or null when absent or null.

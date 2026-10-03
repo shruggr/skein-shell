@@ -1,8 +1,8 @@
 .{
-    .name = .skein_workbench,
-    .version = "0.2.0",
+    .name = .skein_shell,
+    .version = "0.1.0",
     .minimum_zig_version = "0.16.0",
-    .fingerprint = 0xcbba6e71f0e93324,
+    .fingerprint = 0x59f1cd98ca75717f,
     .dependencies = .{
         .skein_sdk = .{
             .url = "https://github.com/shruggr/skein-sdk/archive/refs/tags/v0.4.0.tar.gz",
@@ -17,6 +17,8 @@
         "toolset",
         "bin",
         "etc",
+        "lib",
+        "test",
         "README.md",
     },
 }

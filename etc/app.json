@@ -1,15 +1,47 @@
 {
   "kind": "app",
-  "name": "workbench",
-  "version": "0.2.0",
+  "name": "shell",
+  "version": "0.1.0",
   "programs": {
     "run": "bin/run-handler.wasm",
-    "loop": "bin/loop.wasm",
-    "shell": "shell"
+    "shell": {
+      "code": "shell",
+      "modules": {
+        "brush": "bin/brush.wasm",
+        "coreutils": "bin/coreutils.wasm",
+        "find": "bin/find.wasm",
+        "xargs": "bin/xargs.wasm",
+        "diff": "bin/diff.wasm",
+        "cmp": "bin/cmp.wasm",
+        "jq": "bin/jq.wasm",
+        "which": "bin/which.wasm",
+        "grep": "bin/grep.wasm",
+        "tree": "bin/tree.wasm",
+        "awk": "bin/awk.wasm",
+        "sed": "bin/sed.wasm",
+        "git": "bin/git.wasm",
+        "qjs": "bin/qjs.wasm",
+        "python": "bin/python.wasm",
+        "node": "bin/qjs.wasm",
+        "python3": "bin/python.wasm"
+      },
+      "support": {
+        "python": {
+          "mount": "/opt/skein/python",
+          "files": { "lib/python314.zip": "lib/python314.zip" },
+          "env": { "PYTHONHOME": "/opt/skein/python", "PYTHONDONTWRITEBYTECODE": "1" }
+        },
+        "python3": {
+          "mount": "/opt/skein/python",
+          "files": { "lib/python314.zip": "lib/python314.zip" },
+          "env": { "PYTHONHOME": "/opt/skein/python", "PYTHONDONTWRITEBYTECODE": "1" }
+        }
+      }
+    }
   },
   "provides": [
     {
-      "interface": "workbench.run/1",
+      "interface": "shell/1",
       "functions": {
         "run": {
           "writes": true,
@@ -27,25 +59,6 @@
           }
         }
       }
-    },
-    {
-      "interface": "workbench.chat/1",
-      "functions": {
-        "chat": {
-          "writes": true,
-          "args": {
-            "text": "string",
-            "tree?": "cid",
-            "model?": "string",
-            "replyTo?": "cid"
-          },
-          "answer": {
-            "text": "string",
-            "tree": "cid",
-            "thread": "cid"
-          }
-        }
-      }
     }
   ],
   "requires": [],
@@ -54,12 +67,7 @@
       "address": "run",
       "sender": "$owner",
       "program": "run"
-    },
-    {
-      "address": "chat",
-      "sender": "$owner",
-      "program": "loop"
     }
   ],
-  "description": "The agent workbench: `run` (a bash command in the wasm shell over a tree, the answer in the sender's `results` box) and `chat` (the turn loop: the `infer` peer, `bash` and `message` tool calls, answers in `chat`), each from the owner. `shell` is the kernel's stock shell program: its modules (brush, coreutils and the toolset) are built from toolset/ and pinned in skein. The install boxes (objects, head, dispatch, peers) are the kernel's own operations since skein #77, not this app's."
+  "description": "The shell: `run` (a bash command in the wasm shell over a tree — the body's, else the `main` head's — the answer in the sender's `results` box), from the owner; and the shell program itself, brush with uutils coreutils and the toolset (find, xargs, diff, cmp, jq, which, grep, tree, awk, sed, git, qjs as `node`, python as `python3` with its stdlib), each module a file of this tree. Another app (the chat app's loop) finds the shell program at this app's head `shell/app`."
 }

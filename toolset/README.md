@@ -2,12 +2,13 @@
 
 The sources of the programs the wasm shell (skein's `kernel-zig/src/shell.zig`) runs: brush + uutils
 coreutils, the toolset of issue #13 (search/edit/structured-data
-commands beyond coreutils, registered in `tool_names`, skein's kernel-zig/src/programs.zig), git (issue
-#2, also in `tool_names`), and the script runtimes of issue #25
+commands beyond coreutils, each a command name in the shell program's
+`modules`, `etc/app.json`), git (issue
+#2, also in `modules`), and the script runtimes of issue #25
 (`qjs`/`node`, `python`/`python3`; see "Script runtimes" below). All WASI
 preview1 modules (`wasm32-wasip1`), built with Rust 1.98.1 (git and qjs: C,
 wasi-sdk 34; python: a pinned upstream build) and stripped of symbols.
-`scripts/build-toolset.sh` rebuilds all of them into `out/` from the pinned
+`scripts/build-toolset.sh` rebuilds all of them into `bin/` (the stdlib zip into `lib/`) from the pinned
 sources plus `patches/`, byte-identically on the same machine in the same checkout
 layout (paths of the build machine and even line numbers within a patched
 file appear in panic-location strings baked into the binary, so a
@@ -402,12 +403,12 @@ SHA-256 of the release zip, then stripped of DWARF (30.5 → 7.6 MB).
 Building CPython ourselves would add a CPython checkout, its `Tools/wasm`
 driver and a native build Python for no functional gain today.
 
-The stdlib is skein's `wasm/python314.zip`: `lib/python3.14` of the same release,
+The stdlib is `lib/python314.zip`: `lib/python3.14` of the same release,
 every `.py` file, packed **stored** (the build has no `zlib`, so
 `zipimport` could not inflate) with fixed timestamps, sorted. It is a raw
-block like the modules (`FILES` in `src/runtime/programs.ts`,
-`skein-dev install` puts it in the store). The shell mounts it read-only
-for python processes only (`supported` in programs.zig, a second WASI preopen) at
+block like the modules (the install sends it; the shell program's
+`support` names it). The shell mounts it read-only
+for python processes only (`support.python` in `etc/app.json`, a second WASI preopen) at
 `/opt/skein/python/lib/python314.zip`, with `PYTHONHOME=/opt/skein/python`
 and `PYTHONDONTWRITEBYTECODE=1` as environment defaults (the caller's env
 wins). The mount is not in the tree, never committed, and other programs
@@ -439,10 +440,9 @@ CPython ourselves with zlib and a deflated zip (~2.4 MB).
 
 ## Where the modules live
 
-The built modules are committed and pinned in skein, not here: skein's
-`wasm/*.wasm` (and `wasm/python314.zip`), pinned by raw CID in
-`kernel-zig/src/programs.zig` and `src/runtime/programs.ts`, because the
-kernel's shell program record and skein's default genesis name them. A rebuild
-here (`scripts/build-toolset.sh` → `out/`) is moved into skein with skein's
-`scripts/update-workbench.sh <this checkout>`, which copies the modules and
-rewrites the pins.
+Here: `bin/*.wasm` and `lib/python314.zip` are committed, and the manifest
+(`etc/app.json`) names each as a file of the app's tree. The install sends
+each as a raw block and writes the shell's program record over their CIDs
+(skein's docs/APPS.md, "A shell program"). A rebuild here
+(`scripts/build-toolset.sh`) rewrites them in place; commit them with the
+change that made them, and tag a new version of the app.

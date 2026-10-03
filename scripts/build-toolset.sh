@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Rebuild every shell module (the toolset) into out/ from pinned sources plus
+# Rebuild every shell module (the toolset) into bin/ from pinned sources plus
 # the patches in toolset/patches. Needs rustup with the wasm32-wasip1 target
 # (mise use -g rust@latest && rustup target add wasm32-wasip1). findutils'
 # `onig` (C) dependency needs a WASI C toolchain; this script fetches
@@ -32,7 +32,7 @@ fetch() { # url dir rev
   git -C "$2" clean -qfd
 }
 
-mkdir -p .build out
+mkdir -p .build bin lib
 
 # findutils' onig_sys (C) needs a WASI sysroot; the Rust wasm32-wasip1 target
 # alone (wasi-libc bundled by rustup) is not enough for compiling C.
@@ -52,52 +52,52 @@ fetch https://github.com/reubeno/brush .build/brush "$BRUSH_REV"
 git -C .build/brush apply "$ROOT/toolset/patches/brush.patch"
 rustup target add wasm32-wasip1 --toolchain "$(cd .build/brush && rustup show active-toolchain | cut -d' ' -f1)" >/dev/null
 (cd .build/brush && cargo build --release --target wasm32-wasip1 -p brush-shell --no-default-features --features minimal)
-cp .build/brush/target/wasm32-wasip1/release/brush.wasm out/brush.wasm
+cp .build/brush/target/wasm32-wasip1/release/brush.wasm bin/brush.wasm
 
 fetch https://github.com/uutils/coreutils .build/coreutils "$COREUTILS_REV"
 git -C .build/coreutils apply "$ROOT/toolset/patches/coreutils.patch"
 (cd .build/coreutils && cargo build --release --target wasm32-wasip1 --no-default-features --features feat_wasm)
-cp .build/coreutils/target/wasm32-wasip1/release/coreutils.wasm out/coreutils.wasm
+cp .build/coreutils/target/wasm32-wasip1/release/coreutils.wasm bin/coreutils.wasm
 
 # --- the toolset (issue #13): search/edit/structured-data beyond coreutils ---
 
 fetch https://github.com/uutils/findutils .build/findutils "$FINDUTILS_REV"
 git -C .build/findutils apply "$ROOT/toolset/patches/findutils.patch"
 (cd .build/findutils && cargo build --release --target wasm32-wasip1 --bin find --bin xargs)
-cp .build/findutils/target/wasm32-wasip1/release/find.wasm out/find.wasm
-cp .build/findutils/target/wasm32-wasip1/release/xargs.wasm out/xargs.wasm
+cp .build/findutils/target/wasm32-wasip1/release/find.wasm bin/find.wasm
+cp .build/findutils/target/wasm32-wasip1/release/xargs.wasm bin/xargs.wasm
 
 fetch https://github.com/uutils/diffutils .build/diffutils "$DIFFUTILS_REV"
 git -C .build/diffutils apply "$ROOT/toolset/patches/diffutils.patch"
 (cd .build/diffutils && cargo build --release --target wasm32-wasip1)
 # One multicall binary (like coreutils' own), registered under both names.
-cp .build/diffutils/target/wasm32-wasip1/release/diffutils.wasm out/diff.wasm
-cp .build/diffutils/target/wasm32-wasip1/release/diffutils.wasm out/cmp.wasm
+cp .build/diffutils/target/wasm32-wasip1/release/diffutils.wasm bin/diff.wasm
+cp .build/diffutils/target/wasm32-wasip1/release/diffutils.wasm bin/cmp.wasm
 
 fetch https://github.com/01mf02/jaq .build/jaq "$JAQ_REV"
 git -C .build/jaq apply "$ROOT/toolset/patches/jaq.patch"
 (cd .build/jaq && cargo build --release --target wasm32-wasip1 -p jaq --no-default-features)
-cp .build/jaq/target/wasm32-wasip1/release/jaq.wasm out/jq.wasm
+cp .build/jaq/target/wasm32-wasip1/release/jaq.wasm bin/jq.wasm
 
 fetch https://github.com/uutils/sed .build/sed-cli "$SED_REV"
 git -C .build/sed-cli apply "$ROOT/toolset/patches/sed.patch"
 (cd .build/sed-cli && cargo build --release --target wasm32-wasip1)
-cp .build/sed-cli/target/wasm32-wasip1/release/sed.wasm out/sed.wasm
+cp .build/sed-cli/target/wasm32-wasip1/release/sed.wasm bin/sed.wasm
 
 fetch https://github.com/peteretelej/tree .build/tree-cli "$TREE_REV"
 (cd .build/tree-cli && cargo build --release --target wasm32-wasip1)
-cp .build/tree-cli/target/wasm32-wasip1/release/tree.wasm out/tree.wasm
+cp .build/tree-cli/target/wasm32-wasip1/release/tree.wasm bin/tree.wasm
 
 fetch https://github.com/quinnjr/rawk .build/rawk "$RAWK_REV"
 (cd .build/rawk && cargo build --release --target wasm32-wasip1)
-cp .build/rawk/target/wasm32-wasip1/release/awk-rs.wasm out/awk.wasm
+cp .build/rawk/target/wasm32-wasip1/release/awk-rs.wasm bin/awk.wasm
 
 # which, grep: first-party (no upstream Rust CLI exists for either — see
 # toolset/README.md), built straight from toolset/tools/.
 (cd toolset/tools/which && cargo build --release --target wasm32-wasip1)
-cp toolset/tools/which/target/wasm32-wasip1/release/which.wasm out/which.wasm
+cp toolset/tools/which/target/wasm32-wasip1/release/which.wasm bin/which.wasm
 (cd toolset/tools/grep && cargo build --release --target wasm32-wasip1)
-cp toolset/tools/grep/target/wasm32-wasip1/release/grep.wasm out/grep.wasm
+cp toolset/tools/grep/target/wasm32-wasip1/release/grep.wasm bin/grep.wasm
 
 # git (issue #2): real git in C, for wasm32-wasip1 with wasi-sdk's clang, from
 # the release tarballs (checked by sha256), + patches/git.patch and the WASI
@@ -125,7 +125,7 @@ $WASI_CC -O2 -D_WASI_EMULATED_SIGNAL -I"$ROOT/toolset/git/include" -c toolset/gi
 make -C .build/git-$GIT_VERSION -j"$(nproc)" uname_S=WASI uname_M=wasm32 uname_O=WASI uname_R=1 uname_V=1 \
   SKEIN_WASI_SDK="$WASI_SDK_PATH" SKEIN_ZLIB="$ROOT/.build/zlib-wasi" SKEIN_COMPAT="$ROOT/toolset/git" \
   SKEIN_COMPAT_OBJ="$ROOT/.build/git-$GIT_VERSION/skein-compat.o" git >/dev/null
-cp .build/git-$GIT_VERSION/git out/git.wasm
+cp .build/git-$GIT_VERSION/git bin/git.wasm
 
 # --- script runtimes (issue #25): JavaScript and Python ---
 
@@ -138,7 +138,7 @@ cmake -S .build/quickjs -B .build/quickjs/build-wasi \
   -DCMAKE_TOOLCHAIN_FILE="$WASI_SDK_PATH/share/cmake/wasi-sdk-p1.cmake" -DWASI_SDK_PREFIX="$WASI_SDK_PATH" \
   -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS=-DSKEIN_PRELUDE >/dev/null
 make -s -C .build/quickjs/build-wasi -j"$(nproc)" qjs_exe
-"$WASI_SDK_PATH/bin/llvm-strip" -o out/qjs.wasm .build/quickjs/build-wasi/qjs
+"$WASI_SDK_PATH/bin/llvm-strip" -o bin/qjs.wasm .build/quickjs/build-wasi/qjs
 
 # python: the CPython WASI build published by a CPython core dev
 # (brettcannon/cpython-wasi-build, built with wasi-sdk 24), checked against
@@ -152,7 +152,7 @@ fi
 rm -rf .build/python-wasi
 mkdir -p .build/python-wasi
 (cd .build/python-wasi && unzip -q ../python-wasi.zip)
-"$WASI_SDK_PATH/bin/llvm-strip" -o out/python.wasm .build/python-wasi/python.wasm
-node toolset/tools/python/zip-stdlib.mjs ".build/python-wasi/lib/python${PYTHON_VERSION%.*}" "out/python$(echo "${PYTHON_VERSION%.*}" | tr -d .).zip"
+"$WASI_SDK_PATH/bin/llvm-strip" -o bin/python.wasm .build/python-wasi/python.wasm
+node toolset/tools/python/zip-stdlib.mjs ".build/python-wasi/lib/python${PYTHON_VERSION%.*}" "lib/python$(echo "${PYTHON_VERSION%.*}" | tr -d .).zip"
 
-sha256sum out/*.wasm out/*.zip
+sha256sum bin/*.wasm lib/*.zip
