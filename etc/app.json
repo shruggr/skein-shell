@@ -1,7 +1,7 @@
 {
   "kind": "app",
   "name": "shell",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "programs": {
     "run": "bin/run-handler.wasm",
     "shell": {
@@ -69,5 +69,5 @@
       "program": "run"
     }
   ],
-  "description": "The shell: `run` (a bash command in the wasm shell over a tree — the body's, else the `main` head's — the answer in the sender's `results` box), from the owner; and the shell program itself, brush with uutils coreutils and the toolset (find, xargs, diff, cmp, jq, which, grep, tree, awk, sed, git, qjs as `node`, python as `python3` with its stdlib), each module a file of this tree. Another app (the chat app's loop) finds the shell program at this app's head `shell/app`."
+  "description": "The shell: `run` (box shell/run: a bash command in the wasm shell over a tree — the body's, else the `main` head's — the answer in the sender's `results` box), from the owner; and the shell program itself, brush with uutils coreutils and the toolset (find, xargs, diff, cmp, jq, which, grep, tree, awk, sed, git, qjs as `node`, python as `python3` with its stdlib), each module a file of this tree. Another app (the chat app's loop) finds the shell program at this app's head `shell/app`."
 }

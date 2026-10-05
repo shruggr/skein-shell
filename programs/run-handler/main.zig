@@ -1,4 +1,5 @@
-//! run-handler: the handler program for the `run` box (docs/MESSAGES.md).
+//! run-handler: the handler program for the `shell/run` box (written `run` in etc/app.json:
+//! a box is relative to the app, shruggr/skein#128; docs/MESSAGES.md).
 //!
 //! Step 1 (input: the admitted message and its body record): decode the body
 //! {cmd, tree?, cwd?, env?} (no tree: the `main` head's, else the empty tree),

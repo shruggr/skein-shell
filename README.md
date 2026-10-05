@@ -3,14 +3,14 @@
 The shell app for a [skein](https://github.com/shruggr/skein): `run` runs
 a bash command in the WASI shell over a tree, and the shell itself — brush,
 uutils coreutils and the toolset — ships here as files of the app's tree.
-Version **0.1.0**. A skein has no shell of its own: an instance runs
+Version **0.1.1**. A skein has no shell of its own: an instance runs
 commands once this app is installed (shruggr/skein#83).
 
 ## What it is
 
 | box | program | what |
 |---|---|---|
-| `run` | `run-handler` | `{cmd, tree?, cwd?, env?}` from the owner: a bash command in the shell over a tree (no tree: the `main` head's); replies in the sender's `results` box with `{exitCode, stdout, stderr, tree, replyTo}` |
+| `shell/run` (written `"run"`: a box is relative to the app, shruggr/skein#128) | `run-handler` | `{cmd, tree?, cwd?, env?}` from the owner: a bash command in the shell over a tree (no tree: the `main` head's); replies in the sender's `results` box with `{exitCode, stdout, stderr, tree, replyTo}` |
 
 The shell is this app's `shell` program: a program the kernel runs itself
 (skein's `kernel-zig/src/shell.zig`), its modules named in the manifest —
@@ -51,7 +51,7 @@ left out):
 {
   "kind": "app",
   "name": "shell",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "programs": {
     "run": "bin/run-handler.wasm",
     "shell": {
@@ -113,8 +113,12 @@ npm suite. skein's tests install this app at the commit pinned in its
 
 | | |
 |---|---|
-| this app | 0.1.0 (tag `v0.1.0`) |
+| this app | 0.1.1 (tag `v0.1.1`) |
 | skein-sdk | v0.4.0, by tag tarball and hash in `build.zig.zon` |
+
+0.1.1: the `run` box is `shell/run` — the manifest still writes `"run"`; skein
+resolves a mailbox box under the app's name (shruggr/skein#128). Nothing else
+changed.
 
 0.1.0 is the split of shruggr/skein-workbench (archived) into this app and
 shruggr/skein-chat (shruggr/skein#83): `run` and the whole userland here,
