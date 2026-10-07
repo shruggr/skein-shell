@@ -42,6 +42,11 @@ test "every file the manifest names is in the tree" {
         var fit = s.value_ptr.object.get("files").?.object.iterator();
         while (fit.next()) |f| _ = try read(a, f.value_ptr.string);
     }
-    // Every row's program is a role.
-    for (m.object.get("dispatch").?.array.items) |r| try std.testing.expect(progs.get(r.object.get("program").?.string) != null);
+    // Every route's handler is "<role>.<fn>" of a role in programs (shruggr/skein#143), and no `dispatch`.
+    try std.testing.expect(m.object.get("dispatch") == null);
+    for (m.object.get("routes").?.array.items) |r| {
+        const h = r.object.get("handler").?.string;
+        const role = if (std.mem.indexOfScalar(u8, h, '.')) |d| h[0..d] else h;
+        try std.testing.expect(progs.get(role) != null);
+    }
 }

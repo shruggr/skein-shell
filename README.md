@@ -10,7 +10,7 @@ commands once this app is installed (shruggr/skein#83).
 
 | box | program | what |
 |---|---|---|
-| `shell/run` (written `"run"`: a box is relative to the app, shruggr/skein#128) | `run-handler` | `{cmd, tree?, cwd?, env?}` from the owner: a bash command in the shell over a tree (no tree: the `main` head's); replies in the sender's `results` box with `{exitCode, stdout, stderr, tree, replyTo}` |
+| `shell/run` (written `"run"`: a box is relative to the app, shruggr/skein#128) | `run-handler` | `{cmd, tree?, cwd?, env?}` from root (the function `run`, gated by the role `root`, shruggr/skein#143): a bash command in the shell over a tree (no tree: the `main` head's); replies in the sender's `results` box with `{exitCode, stdout, stderr, tree, replyTo}` |
 
 The shell is this app's `shell` program: a program the kernel runs itself
 (skein's `kernel-zig/src/shell.zig`), its modules named in the manifest —
@@ -70,9 +70,10 @@ left out):
       "answer": { "exitCode": "int", "stdout": "string", "stderr": "string", "tree": "cid" } } } }
   ],
   "requires": [],
-  "dispatch": [
-    { "address": "run", "sender": "$owner", "program": "run" }
-  ]
+  "routes": [
+    { "address": "run", "handler": "run.run" }
+  ],
+  "roles": { "root": ["run"] }
 }
 ```
 
